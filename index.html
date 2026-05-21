@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>한서고등학교 수강신청 시뮬레이터</title>
+    <style>
+        body { 
+            font-family: sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            height: 100vh; 
+            margin: 0; 
+            background-color: #f4f7f6; 
+        }
+        .header { 
+            text-align: center; 
+            margin-bottom: 40px; 
+        }
+        .header h1 { 
+            color: #004085; 
+            font-size: 2.2em; 
+            margin-bottom: 10px; 
+        }
+        .header p { 
+            color: #555; 
+            font-size: 1.1em; 
+        }
+        .card-container { 
+            display: flex; 
+            gap: 20px; 
+            flex-wrap: wrap; 
+            justify-content: center; 
+        }
+        .card { 
+            background-color: #fff; 
+            border: 2px solid #007bff; 
+            border-radius: 10px; 
+            padding: 40px 20px; 
+            text-align: center; 
+            width: 260px; 
+            text-decoration: none; 
+            color: #333; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            transition: transform 0.2s ease, background-color 0.2s ease; 
+        }
+        .card:hover { 
+            transform: translateY(-5px); 
+            background-color: #e7f3ff; 
+        }
+        .card h2 { 
+            color: #007bff; 
+            margin: 0 0 15px 0; 
+            font-size: 1.5em;
+        }
+        .card p { 
+            margin: 0; 
+            color: #666; 
+            font-size: 0.95em; 
+            line-height: 1.4;
+        }
+        .footer { 
+            margin-top: 50px; 
+            font-size: 0.8em; 
+            color: #888; 
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>한서고등학교 수강신청 시뮬레이터</h1>
+        <p>본인의 입학년도에 맞는 교육과정을 선택하세요.</p>
+    </div>
+    
+    <div class="card-container">
+        <a href="2026 - 2025.html" class="card">
+            <h2>2025년 입학생</h2>
+            <p>2학년 및 3학년<br>선택 과목 시뮬레이션</p>
+        </a>
+        
+        <a href="2026 - 2026.html" class="card">
+            <h2>2026년 입학생</h2>
+            <p>2학년 및 3학년<br>선택 과목 시뮬레이션</p>
+        </a>
+    </div>
+
+    <div class="footer">
+        © 한서고등학교
+    </div>
+</body>
+</html>

@@ -1,0 +1,510 @@
+<!DOCTYPE html><html lang="ko">
+    <head>
+        <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>수강신청 시뮬레이터(v.2026 - 2026학년도 입학생)</title>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <style>
+            body{font-family:sans-serif;line-height:1.6;padding:20px;margin:auto;}
+            h1,h2,h3{margin-top:20px; margin-bottom: 10px; color:#333;}
+            h2 { font-size: 1.3em; }
+            h3 { font-size: 1.0em; color:#0056b3; border-bottom:1px solid #eee; padding-bottom:3px; margin-top: 10px;}
+            #user-info-controls { padding: 15px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+            #user-info-controls label { margin-right: 5px; font-weight: bold; color: #495057; }
+            #user-info-controls input[type="text"] { padding: 8px; border: 1px solid #ced4da; border-radius: 4px; margin-right: 15px; min-width: 100px; }
+            #user-info-inputs { display: flex; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+            #save-image-btn { padding: 8px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background-color 0.2s; margin-left: auto; }
+            #save-image-btn:hover { background-color: #0056b3; }
+            #course-selection-wrapper{ display: flex; overflow-x: auto; padding-bottom: 15px; border: 1px solid #ddd; background-color: #f8f9fa; margin-top: 20px; min-height: 400px; }
+            .semester{ flex: 0 0 250px; min-width: 230px; margin: 8px; border: 1px solid #ccc; padding: 10px; border-radius: 5px; background-color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+            .fixed-subjects-section,.elective-subjects-section{ margin-top:10px; margin-bottom:auto; }
+            .fixed-subjects{list-style:none;padding-left:0;color:#555; font-size: 0.95em;}
+            .fixed-subjects li{ background-color:#f0f0f0; margin-bottom:4px; padding:4px 8px; border-radius:3px; display: flex; justify-content: space-between; align-items: center; }
+            .elective-group{ border:1px dashed #bde0ff; padding:10px; margin-top:10px; background-color:#f9fcff; border-radius:4px; }
+            label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; cursor: pointer; padding: 4px; border-radius: 3px; transition: background-color .2s, font-weight .1s; font-size: 0.95em; }
+            label:hover{background-color:#e9ecef;}
+            input[type=checkbox]{margin-right:5px; flex-shrink: 0;}
+            label > span.subject-name, .fixed-subject-name { flex-grow: 1; margin-right: 5px; }
+            .subject-group-display { font-size: 0.85em; color: #777; margin-left: 5px; margin-right: 5px; white-space: nowrap; flex-shrink: 0; }
+            .credits { font-size: 0.9em; color: #666; flex-shrink: 0; text-align: right; white-space: nowrap; padding-left: 5px; }
+            #validation-summary{ margin-top: 0; padding: 10px 15px;border: 1px solid #007bff; background-color: #e7f3ff; border-radius: 8px; position: sticky; top: 10px; z-index: 10; box-shadow: 0 2px 5px rgba(0,0,0,.1); margin-bottom: 20px; }
+            #validation-summary h2{margin-top:0;color:#0056b3; font-size: 1.2em;} #validation-summary ul { padding-left: 20px; margin-top: 5px; margin-bottom: 10px;}
+            #status-limits { display: inline-block; margin-top: 5px; font-weight: bold; }
+             .status-ok{color:green;font-weight:700;} .status-error{color:red;font-weight:700;}
+            #duplicate-warning { color: #cc8400; font-weight: bold; margin-left: 10px; display: inline-block; }
+            .group-limit-error{border:2px solid red!important;background-color:#fff0f0!important;} .group-status{font-weight:700;margin-left:10px;font-size:.9em;padding:2px 5px;border-radius:3px;}
+            .status-complete{background-color:#d4edda;color:#155724;} .status-incomplete{background-color:#fff3cd;color:#856404;} .status-needed{background-color:#f8d7da;color:#721c24;}
+            .semester-total-credits {margin-top: 15px;padding-top: 8px;border-top: 1px solid #eee;text-align: right;font-weight: bold;font-size: 1.0em;}
+            .selected-subject { font-weight: bold; color: #004085; background-color: #e7f3ff; }
+            .duplicate-subject-warning { background-color: #fff3cd !important; border: 1px solid #ffeeba; }
+            #capture-container { position: absolute; left: -9999px; top: 0; background-color: #ffffff; padding: 0; font-family: sans-serif; line-height: 1.6; width: auto; }
+            #capture-container h1 { font-size: 1.8em; text-align: center; margin: 20px 0; }
+            #capture-container .user-info-capture { font-size: 1.1em; margin-bottom: 20px; text-align: center; font-weight: bold;}
+            #capture-container #validation-summary-capture { border: 1px solid #007bff; background-color: #e7f3ff; border-radius: 8px; padding: 10px 15px; margin: 0 0 20px 0; box-sizing: border-box; }
+            /* #capture-container #validation-summary-capture #duplicate-warning { display: none; } <- 이 줄 제거 또는 주석 처리 */
+            #capture-container #course-selection-capture { display: flex; flex-wrap: nowrap; justify-content: flex-start; background-color: #f8f9fa; border: 1px solid #ddd; padding: 10px 0; margin: 0; box-sizing: border-box; }
+            #capture-container .semester-capture { flex: 0 0 250px; min-width: 230px; margin: 8px; border: 1px solid #ccc; padding: 10px; border-radius: 5px; background-color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+            #capture-container .fixed-subjects-section, #capture-container .elective-subjects-section { margin-bottom: auto; }
+            #capture-container .fixed-subjects { list-style: none; padding-left: 0; color: #555; font-size: 0.95em; }
+            #capture-container .fixed-subjects li { background-color: #f0f0f0; margin-bottom: 4px; padding: 4px 8px; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; }
+            #capture-container .elective-group { border: 1px dashed #bde0ff; padding: 10px; margin-top: 10px; background-color: #f9fcff; border-radius: 4px; }
+            #capture-container label { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 0.95em; padding: 4px; }
+            #capture-container input[type=checkbox] { margin-right: 5px; flex-shrink: 0; }
+            #capture-container label > span.subject-name, #capture-container .fixed-subject-name { flex-grow: 1; margin-right: 5px; }
+            #capture-container .subject-group-display { font-size: 0.85em; color: #777; margin-left: 5px; margin-right: 5px; white-space: nowrap; flex-shrink: 0;}
+            #capture-container .credits { font-size: 0.9em; color: #666; flex-shrink: 0; text-align: right; white-space: nowrap; padding-left: 5px; }
+            #capture-container .semester-total-credits { margin-top: 15px; padding-top: 8px; border-top: 1px solid #eee; text-align: right; font-weight: bold; font-size: 1.0em; }
+            #capture-container .selected-subject { font-weight: bold; color: #004085; background-color: #e7f3ff; }
+            #capture-container .duplicate-subject-warning { background-color: #fff3cd !important; border: 1px solid #ffeeba; }
+        </style>
+    </head>
+    <body>
+        <div id="user-info-controls">
+             <div id="user-info-inputs">
+                 <label for="student-id">학번:</label>
+                 <input type="text" id="student-id" name="student-id" placeholder="학번 입력">
+                 <label for="student-name">이름:</label>
+                 <input type="text" id="student-name" name="student-name" placeholder="이름 입력">
+             </div>
+             <button id="save-image-btn">이미지로 저장</button>
+        </div>
+
+        <h1>수강신청 시뮬레이터(v.2026 - 2026학년도 입학생)</h1>
+        <p>각 학기별 과목 목록을 확인하고, 2-3학년 선택 그룹에서 규칙에 맞춰 지정된 개수만큼 과목을 선택하세요.</p>
+
+        <div id="validation-summary">
+             <h2>선택 결과 확인 (2-3학년)</h2>
+            <p><strong>종합 규칙:</strong></p>
+            <ul>
+                <li>국어/수학/영어 선택 (최대 5개): <span id="count-group1">0</span> 개 <span id="status-group1" class="status-ok">✔</span></li>
+                <li>기술·가정/정보/제2외국어/한문 선택 (최소 4개): <span id="count-group2">0</span> 개 <span id="status-group2" class="status-error">✘</span></li>
+            </ul>
+            <div id="status-limits" class="status-ok">✔ 모든 그룹 조건 충족</div>
+            <span id="duplicate-warning"></span>
+        </div>
+
+        <div id="course-selection-wrapper"><div class="semester" id="semester-1-1">
+<h2>1학년 1학기</h2>
+<div class="fixed-subjects-section"><p><strong>학교 지정 과목:</strong></p><ul class="fixed-subjects">
+<li><span class="fixed-subject-name">공통국어1</span><span class="subject-group-display">국어</span><span class="credits">[4]</span></li>
+<li><span class="fixed-subject-name">공통수학1</span><span class="subject-group-display">수학</span><span class="credits">[4]</span></li>
+<li><span class="fixed-subject-name">공통영어1</span><span class="subject-group-display">영어</span><span class="credits">[4]</span></li>
+<li><span class="fixed-subject-name">한국사1</span><span class="subject-group-display">사회</span><span class="credits">[3]</span></li>
+<li><span class="fixed-subject-name">통합사회1</span><span class="subject-group-display">사회</span><span class="credits">[4]</span></li>
+<li><span class="fixed-subject-name">통합과학1</span><span class="subject-group-display">과학</span><span class="credits">[4]</span></li>
+<li><span class="fixed-subject-name">과학탐구실험1</span><span class="subject-group-display">과학</span><span class="credits">[1]</span></li>
+<li><span class="fixed-subject-name">체육1</span><span class="subject-group-display">체육</span><span class="credits">[2]</span></li>
+<li><span class="fixed-subject-name">음악</span><span class="subject-group-display">예술</span><span class="credits">[3]</span></li>
+</ul></div>
+<div class="semester-total-credits">총 학점: <span id="total-credits-1-1">29</span></div>
+</div>
+<div class="semester" id="semester-1-2">
+<h2>1학년 2학기</h2>
+<div class="fixed-subjects-section"><p><strong>학교 지정 과목:</strong></p><ul class="fixed-subjects">
+<li><span class="fixed-subject-name">공통국어2</span><span class="subject-group-display">국어</span><span class="credits">[4]</span></li>
+<li><span class="fixed-subject-name">공통수학2</span><span class="subject-group-display">수학</span><span class="credits">[4]</span></li>
+<li><span class="fixed-subject-name">공통영어2</span><span class="subject-group-display">영어</span><span class="credits">[4]</span></li>
+<li><span class="fixed-subject-name">한국사2</span><span class="subject-group-display">사회</span><span class="credits">[3]</span></li>
+<li><span class="fixed-subject-name">통합사회2</span><span class="subject-group-display">사회</span><span class="credits">[4]</span></li>
+<li><span class="fixed-subject-name">통합과학2</span><span class="subject-group-display">과학</span><span class="credits">[4]</span></li>
+<li><span class="fixed-subject-name">과학탐구실험2</span><span class="subject-group-display">과학</span><span class="credits">[1]</span></li>
+<li><span class="fixed-subject-name">체육2</span><span class="subject-group-display">체육</span><span class="credits">[2]</span></li>
+<li><span class="fixed-subject-name">미술</span><span class="subject-group-display">예술</span><span class="credits">[3]</span></li>
+</ul></div>
+<div class="semester-total-credits">총 학점: <span id="total-credits-1-2">29</span></div>
+</div>
+<div class="semester" id="semester-2-1">
+    <h2>2학년 1학기</h2>
+    <div class="fixed-subjects-section">
+        <p><strong>학교 지정 과목:</strong></p>
+        <ul class="fixed-subjects">
+            <li><span class="fixed-subject-name">문학</span><span class="subject-group-display">국어</span><span class="credits">[4]</span></li>
+            <li><span class="fixed-subject-name">대수</span><span class="subject-group-display">수학</span><span class="credits">[4]</span></li>
+            <li><span class="fixed-subject-name">영어Ⅰ</span><span class="subject-group-display">영어</span><span class="credits">[3]</span></li>
+            <li><span class="fixed-subject-name">운동과 건강</span><span class="subject-group-display">체육</span><span class="credits">[2]</span></li>
+        </ul>
+    </div>
+    <div class="elective-subjects-section">
+        <p><strong>선택 과목:</strong></p>
+        <div class="elective-group" data-group-id="group-2-1-택12학년1학기-1" data-limit="1">
+            <h3>택1(2학년1학기) (1개 선택)</h3>
+            <label><input type="checkbox" name="group-2-1-택12학년1학기-1" value="음악 감상과 비평" data-subject-group="예술" data-credits="2"><span class="subject-name">음악 감상과 비평</span><span class="subject-group-display">예술</span><span class="credits">[2]</span></label>
+            <label><input type="checkbox" name="group-2-1-택12학년1학기-1" value="미술 감상과 비평" data-subject-group="예술" data-credits="2"><span class="subject-name">미술 감상과 비평</span><span class="subject-group-display">예술</span><span class="credits">[2]</span></label>
+            <span class="group-status" style="display: none;"></span>
+        </div>
+
+        <div class="elective-group" data-group-id="group-2-1-택52학년1학기-5" data-limit="5">
+            <h3>택5(2학년1학기) (5개 선택)</h3>
+            <label><input type="checkbox" name="group-2-1-택52학년1학기-5" value="주제 탐구 독서" data-subject-group="국어" data-credits="3"><span class="subject-name">주제 탐구 독서</span><span class="subject-group-display">국어</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-1-택52학년1학기-5" value="기하" data-subject-group="수학" data-credits="3"><span class="subject-name">기하</span><span class="subject-group-display">수학</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-1-택52학년1학기-5" value="영미 문학 읽기" data-subject-group="영어" data-credits="3"><span class="subject-name">영미 문학 읽기</span><span class="subject-group-display">영어</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-1-택52학년1학기-5" value="세계시민과 지리" data-subject-group="사회" data-credits="3"><span class="subject-name">세계시민과 지리</span><span class="subject-group-display">사회</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-1-택52학년1학기-5" value="세계사" data-subject-group="사회" data-credits="3"><span class="subject-name">세계사</span><span class="subject-group-display">사회</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-1-택52학년1학기-5" value="사회와 문화" data-subject-group="사회" data-credits="3"><span class="subject-name">사회와 문화</span><span class="subject-group-display">사회</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-1-택52학년1학기-5" value="현대사회와 윤리" data-subject-group="사회" data-credits="3"><span class="subject-name">현대사회와 윤리</span><span class="subject-group-display">사회</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-1-택52학년1학기-5" value="물리학" data-subject-group="과학" data-credits="3"><span class="subject-name">물리학</span><span class="subject-group-display">과학</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-1-택52학년1학기-5" value="화학" data-subject-group="과학" data-credits="3"><span class="subject-name">화학</span><span class="subject-group-display">과학</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-1-택52학년1학기-5" value="생명과학" data-subject-group="과학" data-credits="3"><span class="subject-name">생명과학</span><span class="subject-group-display">과학</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-1-택52학년1학기-5" value="정보" data-subject-group="기술가정정보" data-credits="3"><span class="subject-name">정보</span><span class="subject-group-display">기가/정보</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-1-택52학년1학기-5" value="창의 공학 설계" data-subject-group="기술가정정보" data-credits="3"><span class="subject-name">창의 공학 설계</span><span class="subject-group-display">기가/정보</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-1-택52학년1학기-5" value="영상 제작 기초" data-subject-group="기술가정정보" data-credits="3"><span class="subject-name">영상 제작 기초</span><span class="subject-group-display">기가/정보</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-1-택52학년1학기-5" value="일본어" data-subject-group="제2외국어/한문" data-credits="3"><span class="subject-name">일본어</span><span class="subject-group-display">제2외/한</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-1-택52학년1학기-5" value="중국어" data-subject-group="제2외국어/한문" data-credits="3"><span class="subject-name">중국어</span><span class="subject-group-display">제2외/한</span><span class="credits">[3]</span></label>
+            <span class="group-status" style="display: none;"></span>
+        </div>
+    </div>
+    <div class="semester-total-credits">총 학점: <span id="total-credits-2-1">13</span></div>
+</div>
+<div class="semester" id="semester-2-2">
+    <h2>2학년 2학기</h2>
+    <div class="fixed-subjects-section">
+        <p><strong>학교 지정 과목:</strong></p>
+        <ul class="fixed-subjects">
+            <li><span class="fixed-subject-name">독서</span><span class="subject-group-display">국어</span><span class="credits">[4]</span></li>
+            <li><span class="fixed-subject-name">미적분Ⅰ</span><span class="subject-group-display">수학</span><span class="credits">[4]</span></li>
+            <li><span class="fixed-subject-name">영어Ⅱ</span><span class="subject-group-display">영어</span><span class="credits">[3]</span></li>
+            <li><span class="fixed-subject-name">스포츠 생활1</span><span class="subject-group-display">체육</span><span class="credits">[2]</span></li>
+        </ul>
+    </div>
+    <div class="elective-subjects-section">
+        <p><strong>선택 과목:</strong></p>
+        <div class="elective-group" data-group-id="group-2-2-택12학년2학기-1" data-limit="1">
+            <h3>택1(2학년2학기) (1개 선택)</h3>
+            <label><input type="checkbox" name="group-2-2-택12학년2학기-1" value="음악 연주와 창작" data-subject-group="예술" data-credits="2"><span class="subject-name">음악 연주와 창작</span><span class="subject-group-display">예술</span><span class="credits">[2]</span></label>
+            <label><input type="checkbox" name="group-2-2-택12학년2학기-1" value="미술 창작" data-subject-group="예술" data-credits="2"><span class="subject-name">미술 창작</span><span class="subject-group-display">예술</span><span class="credits">[2]</span></label>
+            <span class="group-status" style="display: none;"></span>
+        </div>
+
+        <div class="elective-group" data-group-id="group-2-2-택52학년2학기-5" data-limit="5">
+            <h3>택5(2학년2학기) (5개 선택)</h3>
+            <label><input type="checkbox" name="group-2-2-택52학년2학기-5" value="독서 토론과 글쓰기" data-subject-group="국어" data-credits="3"><span class="subject-name">독서 토론과 글쓰기</span><span class="subject-group-display">국어</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-2-택52학년2학기-5" value="인공지능 수학" data-subject-group="수학" data-credits="3"><span class="subject-name">인공지능 수학</span><span class="subject-group-display">수학</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-2-택52학년2학기-5" value="심화 영어" data-subject-group="영어" data-credits="3"><span class="subject-name">심화 영어</span><span class="subject-group-display">영어</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-2-택52학년2학기-5" value="윤리와 사상" data-subject-group="사회" data-credits="3"><span class="subject-name">윤리와 사상</span><span class="subject-group-display">사회</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-2-택52학년2학기-5" value="한국지리 탐구" data-subject-group="사회" data-credits="3"><span class="subject-name">한국지리 탐구</span><span class="subject-group-display">사회</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-2-택52학년2학기-5" value="동아시아 역사 기행" data-subject-group="사회" data-credits="3"><span class="subject-name">동아시아 역사 기행</span><span class="subject-group-display">사회</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-2-택52학년2학기-5" value="경제" data-subject-group="사회" data-credits="3"><span class="subject-name">경제</span><span class="subject-group-display">사회</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-2-택52학년2학기-5" value="역학과 에너지" data-subject-group="과학" data-credits="3"><span class="subject-name">역학과 에너지</span><span class="subject-group-display">과학</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-2-택52학년2학기-5" value="물질과 에너지" data-subject-group="과학" data-credits="3"><span class="subject-name">물질과 에너지</span><span class="subject-group-display">과학</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-2-택52학년2학기-5" value="세포와 물질대사" data-subject-group="과학" data-credits="3"><span class="subject-name">세포와 물질대사</span><span class="subject-group-display">과학</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-2-택52학년2학기-5" value="지구과학" data-subject-group="과학" data-credits="3"><span class="subject-name">지구과학</span><span class="subject-group-display">과학</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-2-택52학년2학기-5" value="로봇과 공학세계" data-subject-group="기술가정정보" data-credits="3"><span class="subject-name">로봇과 공학세계</span><span class="subject-group-display">기가/정보</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-2-택52학년2학기-5" value="인공지능 기초" data-subject-group="기술가정정보" data-credits="3"><span class="subject-name">인공지능 기초</span><span class="subject-group-display">기가/정보</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-2-택52학년2학기-5" value="영상 제작 기초" data-subject-group="기술가정정보" data-credits="3"><span class="subject-name">영상 제작 기초</span><span class="subject-group-display">기가/정보</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-2-택52학년2학기-5" value="일본 문화" data-subject-group="제2외국어/한문" data-credits="3"><span class="subject-name">일본 문화</span><span class="subject-group-display">제2외/한</span><span class="credits">[3]</span></label>
+            <label><input type="checkbox" name="group-2-2-택52학년2학기-5" value="중국 문화" data-subject-group="제2외국어/한문" data-credits="3"><span class="subject-name">중국 문화</span><span class="subject-group-display">제2외/한</span><span class="credits">[3]</span></label>
+            <span class="group-status" style="display: none;"></span>
+        </div>
+    </div>
+    <div class="semester-total-credits">총 학점: <span id="total-credits-2-2">13</span></div>
+</div>
+<div class="semester" id="semester-3-1">
+<h2>3학년 1학기</h2>
+<div class="fixed-subjects-section"><p><strong>학교 지정 과목:</strong></p><ul class="fixed-subjects">
+<li><span class="fixed-subject-name">독서와 작문</span><span class="subject-group-display">국어</span><span class="credits">[3]</span></li>
+<li><span class="fixed-subject-name">확률과 통계</span><span class="subject-group-display">수학</span><span class="credits">[4]</span></li>
+<li><span class="fixed-subject-name">영어 독해와 작문</span><span class="subject-group-display">영어</span><span class="credits">[3]</span></li>
+<li><span class="fixed-subject-name">스포츠 문화</span><span class="subject-group-display">체육</span><span class="credits">[1]</span></li>
+</ul></div>
+<div class="elective-subjects-section"><p><strong>선택 과목:</strong></p>
+<div class="elective-group" data-group-id="group-3-1-택13학년1학기-1" data-limit="1">
+<h3>택1(3학년1학기) (1개 선택)</h3>
+<label><input type="checkbox" name="group-3-1-택13학년1학기-1" value="생태와 환경" data-subject-group="교양" data-credits="2"><span class="subject-name">생태와 환경</span><span class="subject-group-display">교양</span><span class="credits">[2]</span></label>
+<label><input type="checkbox" name="group-3-1-택13학년1학기-1" value="보건" data-subject-group="교양" data-credits="2"><span class="subject-name">보건</span><span class="subject-group-display">교양</span><span class="credits">[2]</span></label>
+<label><input type="checkbox" name="group-3-1-택13학년1학기-1" value="교육의 이해" data-subject-group="교양" data-credits="2"><span class="subject-name">교육의 이해</span><span class="subject-group-display">교양</span><span class="credits">[2]</span></label>
+<span class="group-status" style="display: none;"></span></div>
+<div class="elective-group" data-group-id="group-3-1-택53학년1학기-5" data-limit="5">
+<h3>택5(3학년1학기) (5개 선택)</h3>
+<label><input type="checkbox" name="group-3-1-택53학년1학기-5" value="문학과 영상" data-subject-group="국어" data-credits="3"><span class="subject-name">문학과 영상</span><span class="subject-group-display">국어</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-1-택53학년1학기-5" value="미적분Ⅱ" data-subject-group="수학" data-credits="3"><span class="subject-name">미적분Ⅱ</span><span class="subject-group-display">수학</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-1-택53학년1학기-5" value="심화 영어 독해와 작문" data-subject-group="영어" data-credits="3"><span class="subject-name">심화 영어 독해와 작문</span><span class="subject-group-display">영어</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-1-택53학년1학기-5" value="기후변화와 지속가능한 세계" data-subject-group="사회" data-credits="3"><span class="subject-name">기후변화와 지속가능한 세계</span><span class="subject-group-display">사회</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-1-택53학년1학기-5" value="법과 사회" data-subject-group="사회" data-credits="3"><span class="subject-name">법과 사회</span><span class="subject-group-display">사회</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-1-택53학년1학기-5" value="역사로 탐구하는 현대 세계" data-subject-group="사회" data-credits="3"><span class="subject-name">역사로 탐구하는 현대 세계</span><span class="subject-group-display">사회</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-1-택53학년1학기-5" value="윤리문제 탐구" data-subject-group="사회" data-credits="3"><span class="subject-name">윤리문제 탐구</span><span class="subject-group-display">사회</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-1-택53학년1학기-5" value="사회문제 탐구" data-subject-group="사회" data-credits="3"><span class="subject-name">사회문제 탐구</span><span class="subject-group-display">사회</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-1-택53학년1학기-5" value="전자기와 양자" data-subject-group="과학" data-credits="3"><span class="subject-name">전자기와 양자</span><span class="subject-group-display">과학</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-1-택53학년1학기-5" value="화학 반응의 세계" data-subject-group="과학" data-credits="3"><span class="subject-name">화학 반응의 세계</span><span class="subject-group-display">과학</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-1-택53학년1학기-5" value="생물의 유전" data-subject-group="과학" data-credits="3"><span class="subject-name">생물의 유전</span><span class="subject-group-display">과학</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-1-택53학년1학기-5" value="지구시스템과학" data-subject-group="과학" data-credits="3"><span class="subject-name">지구시스템과학</span><span class="subject-group-display">과학</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-1-택53학년1학기-5" value="행성우주과학" data-subject-group="과학" data-credits="3"><span class="subject-name">행성우주과학</span><span class="subject-group-display">과학</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-1-택53학년1학기-5" value="프로그래밍" data-subject-group="기술가정정보" data-credits="3"><span class="subject-name">프로그래밍</span><span class="subject-group-display">기가/정보</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-1-택53학년1학기-5" value="데이터 과학" data-subject-group="기술가정정보" data-credits="3"><span class="subject-name">데이터 과학</span><span class="subject-group-display">기가/정보</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-1-택53학년1학기-5" value="로봇과 공학세계" data-subject-group="기술가정정보" data-credits="3"><span class="subject-name">로봇과 공학세계</span><span class="subject-group-display">기가/정보</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-1-택53학년1학기-5" value="관광 일본어" data-subject-group="제2외국어/한문" data-credits="3"><span class="subject-name">관광 일본어</span><span class="subject-group-display">제2외/한</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-1-택53학년1학기-5" value="중국어 회화" data-subject-group="제2외국어/한문" data-credits="3"><span class="subject-name">중국어 회화</span><span class="subject-group-display">제2외/한</span><span class="credits">[3]</span></label>
+<span class="group-status" style="display: none;"></span></div>
+</div>
+<div class="semester-total-credits">총 학점: <span id="total-credits-3-1">11</span></div>
+</div>
+<div class="semester" id="semester-3-2">
+<h2>3학년 2학기</h2>
+<div class="fixed-subjects-section"><p><strong>학교 지정 과목:</strong></p><ul class="fixed-subjects">
+<li><span class="fixed-subject-name">통합수학Ⅰ</span><span class="subject-group-display">수학</span><span class="credits">[4]</span></li>
+<li><span class="fixed-subject-name">스포츠 과학</span><span class="subject-group-display">체육</span><span class="credits">[1]</span></li>
+<li><span class="fixed-subject-name">논술</span><span class="subject-group-display">교양</span><span class="credits">[2]</span></li>
+</ul></div>
+<div class="elective-subjects-section"><p><strong>선택 과목:</strong></p>
+<div class="elective-group" data-group-id="group-3-2-택53학년2학기-5" data-limit="5">
+<h3>택7(3학년2학기) (5개 선택)</h3>
+<label><input type="checkbox" name="group-3-2-택73학년2학기-7" value="매체 의사소통" data-subject-group="국어" data-credits="3"><span class="subject-name">매체 의사소통</span><span class="subject-group-display">국어</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-2-택73학년2학기-7" value="수학과제 탐구" data-subject-group="수학" data-credits="3"><span class="subject-name">수학과제 탐구</span><span class="subject-group-display">수학</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-2-택73학년2학기-7" value="세계 문화와 영어" data-subject-group="영어" data-credits="3"><span class="subject-name">세계 문화와 영어</span><span class="subject-group-display">영어</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-2-택73학년2학기-7" value="여행지리" data-subject-group="사회" data-credits="3"><span class="subject-name">여행지리</span><span class="subject-group-display">사회</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-2-택73학년2학기-7" value="역사로 탐구하는 현대 세계" data-subject-group="사회" data-credits="3"><span class="subject-name">역사로 탐구하는 현대 세계</span><span class="subject-group-display">사회</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-2-택73학년2학기-7" value="금융과 경제생활" data-subject-group="사회" data-credits="3"><span class="subject-name">금융과 경제생활</span><span class="subject-group-display">사회</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-2-택73학년2학기-7" value="사회문제 탐구" data-subject-group="사회" data-credits="3"><span class="subject-name">사회문제 탐구</span><span class="subject-group-display">사회</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-2-택73학년2학기-7" value="기후변화와 환경생태" data-subject-group="과학" data-credits="3"><span class="subject-name">기후변화와 환경생태</span><span class="subject-group-display">과학</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-2-택73학년2학기-7" value="과학의 역사와 문화" data-subject-group="과학" data-credits="3"><span class="subject-name">과학의 역사와 문화</span><span class="subject-group-display">과학</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-2-택73학년2학기-7" value="융합과학 탐구" data-subject-group="과학" data-credits="3"><span class="subject-name">융합과학 탐구</span><span class="subject-group-display">과학</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-2-택73학년2학기-7" value="기초 체육 전공 실기" data-subject-group="체육" data-credits="3"><span class="subject-name">기초 체육 전공 실기</span><span class="subject-group-display">체육</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-2-택73학년2학기-7" value="소프트웨어와 생활" data-subject-group="기술가정정보" data-credits="3"><span class="subject-name">소프트웨어와 생활</span><span class="subject-group-display">기가/정보</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-2-택73학년2학기-7" value="창의 공학 설계" data-subject-group="기술가정정보" data-credits="3"><span class="subject-name">창의 공학 설계</span><span class="subject-group-display">기가/정보</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-2-택73학년2학기-7" value="일본어 회화" data-subject-group="제2외국어/한문" data-credits="3"><span class="subject-name">일본어 회화</span><span class="subject-group-display">제2외/한</span><span class="credits">[3]</span></label>
+<label><input type="checkbox" name="group-3-2-택73학년2학기-7" value="심화 중국어" data-subject-group="제2외국어/한문" data-credits="3"><span class="subject-name">심화 중국어</span><span class="subject-group-display">제2외/한</span><span class="credits">[3]</span></label>
+<span class="group-status" style="display: none;"></span></div>
+</div>
+<div class="semester-total-credits">총 학점: <span id="total-credits-3-2">13</span></div>
+</div>
+</div>
+
+        <div id="capture-container"></div>
+
+        <script>
+            function handleSelectionChange(event) {
+                const checkbox = event.target;
+                const label = checkbox.closest('label');
+                if (label) { label.classList.toggle('selected-subject', checkbox.checked); }
+                const semesterId = checkbox.closest('.semester')?.id.replace('semester-', '');
+                const groupDiv = checkbox.closest('.elective-group');
+                if(groupDiv) limitGroupSelections(groupDiv);
+                validateAllSelections();
+                if(semesterId) updateSemesterCredits(semesterId);
+            }
+
+            function limitGroupSelections(groupDiv) { const checkboxes = groupDiv.querySelectorAll('input[type="checkbox"]'); const limit = parseInt(groupDiv.getAttribute('data-limit')); if (isNaN(limit) || limit <= 0) return; const checkedCount = groupDiv.querySelectorAll('input[type="checkbox"]:checked').length; const statusSpan = groupDiv.querySelector('.group-status'); let statusText = ''; let statusClass = ''; let needsAttention = false; if (checkedCount >= limit) { checkboxes.forEach(cb => { if (!cb.checked) { cb.disabled = true; } else { cb.disabled = false; } }); } else { checkboxes.forEach(cb => { const semesterDiv = cb.closest('.semester'); const isFirstGrade = semesterDiv && semesterDiv.id.startsWith('semester-1-'); if (!isFirstGrade || cb.checked) { cb.disabled = false; } }); } if (checkedCount === limit) { statusText = `✔ ${limit}개 선택 완료`; statusClass = 'status-complete'; } else if (checkedCount > 0 && checkedCount < limit) { statusText = `⚠ ${checkedCount}/${limit}개 선택됨`; statusClass = 'status-incomplete'; needsAttention = true; } else if (checkedCount === 0) { statusText = `✖ ${limit}개 선택 필요`; statusClass = 'status-needed'; needsAttention = true; } else if (checkedCount > limit) { statusText = `⚠ ${checkedCount}/${limit}개 선택됨 (초과)`; statusClass = 'status-error'; needsAttention = true; } if (statusSpan) { statusSpan.textContent = statusText; statusSpan.className = `group-status ${statusClass}`; statusSpan.style.display = statusText ? 'inline-block' : 'none'; } if (needsAttention) { groupDiv.classList.add('group-limit-error'); } else { groupDiv.classList.remove('group-limit-error'); } }
+            function updateSemesterCredits(semesterId) { const semesterDiv = document.getElementById(`semester-${semesterId}`); if (!semesterDiv) return; let totalCredits = 0; const fixedCreditSpans = semesterDiv.querySelectorAll('ul.fixed-subjects li span.credits'); fixedCreditSpans.forEach(span => { const credits = parseFloat(span.textContent.replace(/\[|\]/g, '')); if (!isNaN(credits)) { totalCredits += credits; } }); const checkedElectives = semesterDiv.querySelectorAll('.elective-group input[type="checkbox"]:checked'); checkedElectives.forEach(checkbox => { const credits = parseFloat(checkbox.getAttribute('data-credits')); if (!isNaN(credits)) { totalCredits += credits; } }); const totalCreditsSpan = document.getElementById(`total-credits-${semesterId}`); if (totalCreditsSpan) { totalCreditsSpan.textContent = (totalCredits === Math.floor(totalCredits)) ? Math.floor(totalCredits) : totalCredits; } }
+            function initializeSimulator() {
+                 document.querySelectorAll('#course-selection-wrapper .semester').forEach(semesterDiv => {
+                     const semesterId = semesterDiv.id.replace('semester-', '');
+                     updateSemesterCredits(semesterId);
+                     semesterDiv.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                         const label = checkbox.closest('label');
+                         if (label) { label.classList.toggle('selected-subject', checkbox.checked); }
+                     });
+                 });
+                 document.querySelectorAll('#course-selection-wrapper input[type="checkbox"]').forEach(checkbox => {
+                     checkbox.removeEventListener('change', handleSelectionChange);
+                     checkbox.addEventListener('change', handleSelectionChange);
+                 });
+                 document.querySelectorAll('#course-selection-wrapper .elective-group').forEach(groupDiv => {
+                     const semesterDiv = groupDiv.closest('.semester');
+                     const isFirstGrade = semesterDiv && semesterDiv.id.startsWith('semester-1-');
+                     if (isFirstGrade) { groupDiv.querySelectorAll('input[type="checkbox"]').forEach(cb => { if (!cb.checked) { cb.disabled = true; } }); }
+                     limitGroupSelections(groupDiv);
+                 });
+                 validateAllSelections();
+                 document.getElementById('save-image-btn').addEventListener('click', saveSelectionAsImage);
+            }
+
+            function validateAllSelections() {
+                let countGroup1 = 0, countGroup2 = 0, overallValid = true;
+                const semestersNeedingAttention = new Set();
+                const group1SubjectGroups = ["국어", "수학", "영어"];
+                const group2SubjectGroups = ["기술가정정보", "제2외국어/한문", "기술·가정", "정보", "제2외국어", "한문"];
+                const group1SubjectNames = ["화법과 작문", "독서", "언어와 매체", "문학", "실용 국어", "심화 국어", "고전 읽기", "공통국어1", "공통국어2", "독서와 작문", "매체 의사소통", "언어생활 탐구", "문학과 영상", "수학Ⅰ", "수학Ⅱ", "미적분", "확률과 통계", "기하", "경제 수학", "인공지능 수학", "실용 통계", "수학과제 탐구", "공통수학1", "공통수학2", "대수", "미적분Ⅰ", "통합수학Ⅰ", "미적분Ⅱ", "영어Ⅰ", "영어Ⅱ", "영어 회화", "영어 독해와 작문", "실용 영어", "영어권 문화", "진로 영어", "영미 문학 읽기", "공통영어1", "공통영어2", "미디어 영어", "심화 영어", "심화 영어 독해와 작문", "세계 문화와 영어"];
+                const group2SubjectNames = ["기술가정", "가정과학", "정보", "공학 일반", "창의 경영", "해양 문화와 기술", "지식 재산 일반", "인공지능 기초", "농업 생명 과학", "수산 해운 산업 기초", "창의 공학 설계", "영상 제작 기초", "로봇과 공학세계", "프로그래밍", "데이터 과학", "소프트웨어와 생활", "일본어", "중국어", "일본 문화", "중국 문화", "일본어 회화", "중국어 회화", "심화 일본어", "심화 중국어", "독일어Ⅰ", "프랑스어Ⅰ", "스페인어Ⅰ", "아랍어Ⅰ", "베트남어Ⅰ", "러시아어Ⅰ", "한문Ⅰ", "독일어Ⅱ", "프랑스어Ⅱ", "스페인어Ⅱ", "아랍어Ⅱ", "베트남어Ⅱ", "러시아어Ⅱ", "한문Ⅱ", "기술·가정", "정보과학"];
+
+                let selectedSubjectNames = [];
+                let duplicateSubjects = [];
+
+                document.querySelectorAll('#course-selection-wrapper input[type="checkbox"]:checked').forEach(checkbox => {
+                    const subjectGroup = checkbox.getAttribute('data-subject-group');
+                    const subjectName = checkbox.value ? checkbox.value.trim() : "";
+                    let isInGroup1 = false, isInGroup2 = false;
+                    const normalizedSubjectGroup = subjectGroup ? subjectGroup.replace(/\//g, '').replace(/·/g, '') : "";
+                    const group2CheckNames = ["기술가정정보", "제2외국어한문", "기술가정", "제2외국어", "한문", "정보", "정보과학"];
+                    if (group1SubjectGroups.includes(subjectGroup) || (subjectName && group1SubjectNames.includes(subjectName))) isInGroup1 = true;
+                    if (group2SubjectGroups.includes(subjectGroup) || group2CheckNames.includes(normalizedSubjectGroup) || (subjectName && group2SubjectNames.includes(subjectName))) isInGroup2 = true;
+                    if (isInGroup1) countGroup1++;
+                    if (isInGroup2) countGroup2++;
+                    if (subjectName) { selectedSubjectNames.push(subjectName); }
+                });
+
+                const subjectCounts = {};
+                selectedSubjectNames.forEach(name => {
+                    subjectCounts[name] = (subjectCounts[name] || 0) + 1;
+                    if (subjectCounts[name] === 2) { duplicateSubjects.push(name); }
+                });
+
+                document.querySelectorAll('#course-selection-wrapper label.duplicate-subject-warning').forEach(lbl => {
+                    lbl.classList.remove('duplicate-subject-warning');
+                });
+                if (duplicateSubjects.length > 0) {
+                    document.querySelectorAll('#course-selection-wrapper input[type="checkbox"]:checked').forEach(checkbox => {
+                        const subjectName = checkbox.value.trim();
+                        if (duplicateSubjects.includes(subjectName)) {
+                            const label = checkbox.closest('label');
+                            if (label) { label.classList.add('duplicate-subject-warning'); }
+                        }
+                    });
+                }
+
+		const countSpan1 = document.getElementById('count-group1');
+		const statusSpan1 = document.getElementById('status-group1');
+		countSpan1.textContent = countGroup1;
+		if (countGroup1 > 5) { statusSpan1.textContent = '✘ (5개 초과)'; statusSpan1.className = 'status-error'; overallValid = false; }
+		else { statusSpan1.textContent = `✔ (${countGroup1}/5)`; statusSpan1.className = 'status-ok'; }
+
+                const countSpan2 = document.getElementById('count-group2');
+                const statusSpan2 = document.getElementById('status-group2');
+                countSpan2.textContent = countGroup2;
+                if (countGroup2 < 4) { const needed = 4 - countGroup2; statusSpan2.textContent = `✘ (${countGroup2}/4, ${needed}개 부족)`; statusSpan2.className = 'status-error'; overallValid = false; }
+                else { statusSpan2.textContent = `✔ (${countGroup2}/4 이상)`; statusSpan2.className = 'status-ok'; }
+
+                let allGroupsMetLimit = true;
+                semestersNeedingAttention.clear();
+                document.querySelectorAll('#course-selection-wrapper .elective-group').forEach(groupDiv => {
+                    const limit = parseInt(groupDiv.getAttribute('data-limit'));
+                    const semesterDiv = groupDiv.closest('.semester');
+                    const isFirstGrade = semesterDiv && semesterDiv.id.startsWith('semester-1-');
+                    if (!isNaN(limit) && limit > 0 && !isFirstGrade) {
+                        const checkedCount = groupDiv.querySelectorAll('input[type="checkbox"]:checked').length;
+                        limitGroupSelections(groupDiv);
+                        if (checkedCount !== limit) {
+                            allGroupsMetLimit = false;
+                            const semesterId = semesterDiv.id.replace('semester-', '');
+                            semestersNeedingAttention.add(semesterId);
+                        }
+                    } else if (isFirstGrade) { limitGroupSelections(groupDiv); }
+                });
+
+                const statusLimits = document.getElementById('status-limits');
+                const warningSpan = document.getElementById('duplicate-warning');
+
+                if (allGroupsMetLimit) {
+                    if (overallValid) { statusLimits.textContent = '✔ 모든 그룹 조건 충족'; statusLimits.className = 'status-ok'; }
+                    else { statusLimits.textContent = '⚠ 종합 규칙 위반 (상단 확인)'; statusLimits.className = 'status-error'; }
+                } else {
+                    statusLimits.textContent = `⚠ 그룹 선택 필요 학기: ${[...semestersNeedingAttention].sort().join(', ')}`;
+                    statusLimits.className = 'status-error';
+                    overallValid = false;
+                }
+
+                if (duplicateSubjects.length > 0) {
+                    const duplicateNamesFormatted = duplicateSubjects.map(name => `'${name}'`).join(', ');
+                    warningSpan.textContent = `⚠ ${duplicateNamesFormatted} 과목을 중복 선택하였습니다.`;
+                } else {
+                    warningSpan.textContent = '';
+                }
+            }
+
+            // --- 이미지 저장 함수 수정: 중복 경고 제거 로직 삭제 ---
+            async function saveSelectionAsImage() {
+                const studentId = document.getElementById('student-id').value || '00000';
+                const studentName = document.getElementById('student-name').value || '000';
+                const validationSummaryEl = document.getElementById('validation-summary');
+                const courseSelectionEl = document.getElementById('course-selection-wrapper');
+                const captureContainer = document.getElementById('capture-container');
+
+                captureContainer.innerHTML = '';
+                captureContainer.style.padding = '0';
+                captureContainer.style.width = 'auto';
+
+                let captureHTML = '<h1 style="margin: 20px 0;">교육과정 선택 결과</h1>';
+                captureHTML += `<div class="user-info-capture" style="margin-bottom: 20px;">학번 : ${studentId} 이름 : ${studentName}</div>`;
+
+                // validation-summary 복제 (중복 경고 포함)
+                const validationSummaryClone = validationSummaryEl.cloneNode(true);
+                validationSummaryClone.id = 'validation-summary-capture';
+                validationSummaryClone.style.position = 'static';
+                // 아래 두 줄 삭제: 중복 경고 메시지를 이미지에 포함시킴
+                // const duplicateWarningClone = validationSummaryClone.querySelector('#duplicate-warning');
+                // if (duplicateWarningClone) { duplicateWarningClone.remove(); }
+                captureHTML += validationSummaryClone.outerHTML;
+
+                const courseSelectionClone = courseSelectionEl.cloneNode(true);
+                courseSelectionClone.id = 'course-selection-capture';
+                courseSelectionClone.style.overflowX = 'visible';
+                courseSelectionClone.style.height = 'auto';
+                courseSelectionClone.style.minHeight = 'unset';
+
+                courseSelectionClone.querySelectorAll('.semester-capture, .semester').forEach(semester => {
+                    semester.classList.add('semester-capture');
+                    semester.classList.remove('semester');
+                    const semesterIdMatch = semester.id.match(/semester-(\d+-\d+)/);
+                    if (!semesterIdMatch) { console.warn(`Could not parse semester ID from: ${semester.id}`); return; }
+                    const originalSemesterId = `semester-${semesterIdMatch[1]}`;
+                    const originalSemester = document.getElementById(originalSemesterId);
+                    if (originalSemester) {
+                        const originalCheckboxes = originalSemester.querySelectorAll('input[type="checkbox"]');
+                        const clonedCheckboxes = semester.querySelectorAll('input[type="checkbox"]');
+                        originalCheckboxes.forEach((origCb, index) => {
+                            if (clonedCheckboxes[index]) {
+                                clonedCheckboxes[index].checked = origCb.checked;
+                                const origLabel = origCb.closest('label');
+                                const clonedLabel = clonedCheckboxes[index].closest('label');
+                                if (origLabel && clonedLabel) {
+                                    clonedLabel.className = origLabel.className;
+                                }
+                            }
+                        });
+                    } else { console.error(`Original semester element not found for ID: ${originalSemesterId}`); }
+                });
+                captureHTML += courseSelectionClone.outerHTML;
+
+                captureContainer.innerHTML = captureHTML;
+
+                const validationSummaryCaptureEl = captureContainer.querySelector('#validation-summary-capture');
+                const courseSelectionCaptureEl = captureContainer.querySelector('#course-selection-capture');
+                if (!courseSelectionCaptureEl) { alert("이미지 생성 오류"); return; }
+
+                let totalSemestersWidth = 0;
+                 courseSelectionCaptureEl.querySelectorAll('.semester-capture').forEach(sem => {
+                     const style = window.getComputedStyle(sem);
+                     totalSemestersWidth += sem.offsetWidth + parseFloat(style.marginLeft) + parseFloat(style.marginRight);
+                 });
+                 const csStyle = window.getComputedStyle(courseSelectionCaptureEl);
+                 // 콘텐츠 너비 계산 시, validationSummary 너비와 courseSelection 너비 중 더 큰 값을 기준으로 설정
+                 const validationSummaryWidth = validationSummaryCaptureEl ? validationSummaryCaptureEl.offsetWidth : 0;
+                 const courseSelectionWidth = totalSemestersWidth + parseFloat(csStyle.paddingLeft) + parseFloat(csStyle.paddingRight) + parseFloat(csStyle.borderLeftWidth) + parseFloat(csStyle.borderRightWidth);
+                 const contentWidth = Math.max(validationSummaryWidth, courseSelectionWidth);
+
+                // 너비 적용
+                if (validationSummaryCaptureEl) { validationSummaryCaptureEl.style.width = `${contentWidth}px`; }
+                courseSelectionCaptureEl.style.width = `${contentWidth}px`; // course selection 너비도 맞춰줌
+                captureContainer.style.width = `${contentWidth}px`;
+
+                await new Promise(resolve => setTimeout(resolve, 200));
+
+                html2canvas(captureContainer, {
+                     scale: 1.5, logging: true, useCORS: true, width: contentWidth, height: captureContainer.scrollHeight
+                }).then(canvas => {
+                    const image = canvas.toDataURL("image/png");
+                    const link = document.createElement('a');
+                    link.href = image;
+                    link.download = `${studentId}_${studentName}_선택결과.png`;
+                    link.click();
+                }).catch(err => {
+                    console.error("Error capturing image:", err);
+                    alert("이미지 저장 중 오류가 발생했습니다.");
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', initializeSimulator);
+        </script>
+    </body>
+    </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+38
