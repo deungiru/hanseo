@@ -16,7 +16,7 @@
             #save-image-btn:hover { background-color: #0056b3; }
             #course-selection-wrapper{ display: flex; overflow-x: auto; padding-bottom: 15px; border: 1px solid #ddd; background-color: #f8f9fa; margin-top: 20px; min-height: 400px; }
             .semester{ flex: 0 0 250px; min-width: 230px; margin: 8px; border: 1px solid #ccc; padding: 10px; border-radius: 5px; background-color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
-            .fixed-subjects-section,.elective-subjects-section{ margin-top:10px; margin-bottom:auto; }
+	    .fixed-subjects-section, .elective-subjects-section { margin-top: 10px; margin-bottom: 15px; }
             .fixed-subjects{list-style:none;padding-left:0;color:#555; font-size: 0.95em;}
             .fixed-subjects li{ background-color:#f0f0f0; margin-bottom:4px; padding:4px 8px; border-radius:3px; display: flex; justify-content: space-between; align-items: center; }
             .elective-group{ border:1px dashed #bde0ff; padding:10px; margin-top:10px; background-color:#f9fcff; border-radius:4px; }
@@ -33,7 +33,7 @@
             #duplicate-warning { color: #cc8400; font-weight: bold; margin-left: 10px; display: inline-block; }
             .group-limit-error{border:2px solid red!important;background-color:#fff0f0!important;} .group-status{font-weight:700;margin-left:10px;font-size:.9em;padding:2px 5px;border-radius:3px;}
             .status-complete{background-color:#d4edda;color:#155724;} .status-incomplete{background-color:#fff3cd;color:#856404;} .status-needed{background-color:#f8d7da;color:#721c24;}
-            .semester-total-credits {margin-top: 15px;padding-top: 8px;border-top: 1px solid #eee;text-align: right;font-weight: bold;font-size: 1.0em;}
+	    .semester-total-credits { margin-top: auto; padding-top: 8px; border-top: 1px solid #eee; text-align: right; font-weight: bold; font-size: 1.0em; }
             .selected-subject { font-weight: bold; color: #004085; background-color: #e7f3ff; }
             .duplicate-subject-warning { background-color: #fff3cd !important; border: 1px solid #ffeeba; }
             #capture-container { position: absolute; left: -9999px; top: 0; background-color: #ffffff; padding: 0; font-family: sans-serif; line-height: 1.6; width: auto; }
@@ -231,8 +231,8 @@
 <li><span class="fixed-subject-name">논술</span><span class="subject-group-display">교양</span><span class="credits">[2]</span></li>
 </ul></div>
 <div class="elective-subjects-section"><p><strong>선택 과목:</strong></p>
-<div class="elective-group" data-group-id="group-3-2-택73학년2학기-5" data-limit="5">
-<h3>택5(3학년2학기) (5개 선택)</h3>
+<div class="elective-group" data-group-id="group-3-2-택73학년2학기-7" data-limit="7">
+<h3>택7(3학년2학기) (7개 선택)</h3>
 <label><input type="checkbox" name="group-3-2-택73학년2학기-7" value="매체 의사소통" data-subject-group="국어" data-credits="3"><span class="subject-name">매체 의사소통</span><span class="subject-group-display">국어</span><span class="credits">[3]</span></label>
 <label><input type="checkbox" name="group-3-2-택73학년2학기-7" value="수학과제 탐구" data-subject-group="수학" data-credits="3"><span class="subject-name">수학과제 탐구</span><span class="subject-group-display">수학</span><span class="credits">[3]</span></label>
 <label><input type="checkbox" name="group-3-2-택73학년2학기-7" value="세계 문화와 영어" data-subject-group="영어" data-credits="3"><span class="subject-name">세계 문화와 영어</span><span class="subject-group-display">영어</span><span class="credits">[3]</span></label>
@@ -481,6 +481,3 @@
         </script>
     </body>
     </html>
-
-
-38
